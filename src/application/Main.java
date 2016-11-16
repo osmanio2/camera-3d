@@ -28,7 +28,7 @@ public class Main extends Application {
 			
 			primaryStage.setScene(scene);
 		
-			FXController controller = loader.getController();
+			CalibrationController controller = loader.getController();
 			
 			controller.init();
 			

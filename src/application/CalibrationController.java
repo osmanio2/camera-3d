@@ -36,7 +36,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-public class FXController {
+public class CalibrationController {
 	
 	@FXML
 	private Button cameraButton;
