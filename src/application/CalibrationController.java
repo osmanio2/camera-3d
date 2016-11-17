@@ -157,7 +157,7 @@ public class CalibrationController {
 		
 		if(!this.CameraActive) {
 			
-			this.capture.open(0);
+			this.capture.open(1);
 			
 			if(this.capture.isOpened()) {
 				
@@ -336,6 +336,7 @@ public class CalibrationController {
 				Calib3d.drawChessboardCorners(frame, boardSize, imageCorners, found);
 				
 				this.snapshotButton.setDisable(false);
+				this.takeSnapshot();
 				
 			} else {
 				

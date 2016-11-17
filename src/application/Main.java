@@ -3,6 +3,7 @@ package application;
 import org.opencv.core.Core;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
@@ -31,6 +32,8 @@ public class Main extends Application {
 			CalibrationController controller = loader.getController();
 			
 			controller.init();
+			
+			primaryStage.setOnCloseRequest(e -> Platform.exit());
 			
 			primaryStage.show();
 		
