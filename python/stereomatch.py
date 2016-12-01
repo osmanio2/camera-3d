@@ -9,9 +9,13 @@ Resulting .ply file cam be easily viewed using MeshLab ( http://meshlab.sourcefo
 import numpy as np
 import cv2
 
-K = np.float32([[ 597.31632592, 0., 334.37227826], [0., 566.12785006, 311.72572164], [0., 0., 1.]])
-d = np.array([-9.05381703e-02, 1.25206118e+00, 5.68513953e-02, 1.64754677e-03, -2.75910906e+00, 0.0, 0.0, 0.0])\
-    .reshape(1, 8)
+#K = np.float32([[ 597.31632592, 0., 334.37227826], [0., 566.12785006, 311.72572164], [0., 0., 1.]])
+#d = np.array([-9.05381703e-02, 1.25206118e+00, 5.68513953e-02, 1.64754677e-03, -2.75910906e+00])\
+#    .reshape(1, 5)
+
+K = np.float32([[ 558.25554169, 0., 276.86379439], [0., 552.51395179, 254.18593723], [0., 0., 1.]])
+d = np.array([-0.05241047, 0.3728780, -0.00451061, -0.0085038, -1.25320858])\
+    .reshape(1, 5)
 K_inv = np.linalg.inv(K)
 ply_header = '''ply
 format ascii 1.0
@@ -51,7 +55,7 @@ if __name__ == '__main__':
 #    imgL = cv2.pyrDown( cv2.imread('../gpu/aloeL.jpg') )  # downscale images for faster processing
 #    imgR = cv2.pyrDown( cv2.imread('../gpu/aloeR.jpg') )
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     imgCount = 0
     while (True):
         # Capture frame-by-frame
@@ -61,15 +65,20 @@ if __name__ == '__main__':
         if cv2.waitKey(1) & 0xFF == ord('q'):
             if imgCount == 0:
                 imgl = frame
+                cv2.imwrite('ImgL.png', imgl)
                 print "Image one captured"
             elif imgCount == 1:
                 imgr = frame
+                cv2.imwrite('ImgR.png', imgr)
                 print "Image two captured"
             imgCount += 1
 
             if imgCount == 2: break
     imgL = cv2.undistort(imgl, K, d)
     imgR = cv2.undistort(imgr, K, d)
+
+    cv2.imwrite('ImgL_undistort.png', imgL)
+    cv2.imwrite('ImgR_undistort.png', imgR)
     # extract key points and descriptors from both images
     detector = cv2.SURF(250)
     first_key_points, first_descriptors = detector.detectAndCompute(imgL, None)
@@ -141,11 +150,12 @@ if __name__ == '__main__':
                 cv2.line(img, (0, i), (img.shape[1], i), (255, 0, 0))
 
             cv2.imshow('rectified', img)
+            cv2.imwrite('rectified.png', img)
             cv2.waitKey(0)
     # disparity range is tuned for 'aloe' image pair
-    window_size = 5
-    min_disp = 20
-    num_disp = 180-min_disp
+    window_size = 11
+    min_disp = 40
+    num_disp = 200-min_disp
     stereo = cv2.StereoSGBM(minDisparity = min_disp,
         numDisparities = num_disp,
         SADWindowSize = window_size,
@@ -157,28 +167,57 @@ if __name__ == '__main__':
         P2 = 32*3*window_size**2,
         fullDP = False
     )
+
     #print " disparity-to-depth mapping matrix :\n", Q
     print 'computing disparity...'
     disp = stereo.compute(imgL, imgR).astype(np.float32) / 16.0
-
+    cv2.imwrite('disparity.png', disp)
     print 'generating 3d point cloud...',
-
+    #print Q
     h, w = imgL.shape[:2]
     f = 0.8 * w  # guess for focal length
-    Q = np.float32([[1, 0, 0, -0.5 * w],
-                    [0, -1, 0, 0.5 * h],  # turn points 180 deg around x-axis,
+    Q =  np.float32([[1, 0, 0, -0.5 * w],
+                   [0, -1, 0, 0.5 * h],  # turn points 180 deg around x-axis,
                     [0, 0, 0, -f],  # so that y-axis looks up
                     [0, 0, 1, 0]])
-
+    #print yy
     points = cv2.reprojectImageTo3D(disp, Q)
     colors = cv2.cvtColor(imgL, cv2.COLOR_BGR2RGB)
     mask = disp > disp.min()
     out_points = points[mask]
-    print out_points
+    #print out_points
     out_colors = colors[mask]
     out_fn = 'out.ply'
     write_ply('out.ply', out_points, out_colors)
     print '%s saved' % 'out.ply'
+    Q = np.float32([[1, 0, 0, -0.5 * w],
+                    [0, 1, 0, -0.5 * h],  # turn points 180 deg around x-axis,
+                    [0, 0, 0, f],  # so that y-axis looks up
+                    [0, 0, -0.01, 0]])
+    # print yy
+    points = cv2.reprojectImageTo3D(disp, Q)
+    colors = cv2.cvtColor(imgL, cv2.COLOR_BGR2RGB)
+    mask = disp > disp.min()
+    out_points = points[mask]
+    # print out_points
+    out_colors = colors[mask]
+    out_fn = 'out2.ply'
+    write_ply('out2.ply', out_points, out_colors)
+    print '%s saved' % 'out2.ply'
+    Q = np.float32([[1, 0, 0, -0.5 * w],
+                    [0, 1, 0, -0.5 * h],  # turn points 180 deg around x-axis,
+                    [0, 0, 0, 0.6*f],  # so that y-axis looks up
+                    [0, 0, -0.01, 0]])
+    # print yy
+    points = cv2.reprojectImageTo3D(disp, Q)
+    colors = cv2.cvtColor(imgL, cv2.COLOR_BGR2RGB)
+    mask = disp > disp.min()
+    out_points = points[mask]
+    # print out_points
+    out_colors = colors[mask]
+    out_fn = 'out3.ply'
+    write_ply('out3.ply', out_points, out_colors)
+    print '%s saved' % 'out3.ply'
     cap.release()
     cv2.imshow('left', imgL)
     cv2.imshow('disparity', (disp-min_disp)/num_disp)

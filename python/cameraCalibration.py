@@ -14,13 +14,13 @@ pattern_points *= square_size
 obj_points = []
 img_points = []
 h, w = 0, 0
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 countShots = 0
 while(True):
         # Capture frame-by-frame
     ret, frame = cap.read()
         # Our operations on the frame come here
-    img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    img = frame
         #print 'processing %s...' % fn,
         #img = cv2.imread(fn, 0)
     h, w = img.shape[:2]
@@ -30,7 +30,7 @@ while(True):
     if found:
         #print 'chessboard found'
         term = ( cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.1 )
-        cv2.cornerSubPix(img, corners, (5, 5), (-1, -1), term)
+        cv2.cornerSubPix(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), corners, (5, 5), (-1, -1), term)
         cv2.drawChessboardCorners(img, pattern_size, corners, found)
     cv2.imshow('original', img)
     if not found:
